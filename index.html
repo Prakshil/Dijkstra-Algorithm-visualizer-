@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shortest Path Finder</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+    crossorigin="" />
+  <!-- Leaflet Routing Machine CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+    crossorigin=""></script>
+  <!-- Leaflet Routing Machine JS -->
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h1 class="card-title">Shortest Path Finder</h1>
+        <p class="card-description">
+          Visualize Dijkstra's algorithm for finding the shortest path between two nodes
+        </p>
+      </div>
+      <div class="card-content">
+        <div class="tabs">
+          <div class="tabs-list">
+            <button class="tab-trigger active" data-tab="graph">Graph</button>
+            <button class="tab-trigger" data-tab="map">Map</button>
+            <button class="tab-trigger" data-tab="instructions">Instructions</button>
+          </div>
+          
+          <div class="tab-content active" id="graph-tab">
+            <div class="controls-row">
+              <div class="control-group">
+                <button id="edit-mode" class="button primary">Edit</button>
+                <button id="select-mode" class="button">Select</button>
+              </div>
+              
+              <div class="control-group" id="edit-controls">
+                <div id="edge-controls" style="display: none;">
+                  <label for="weight">Weight:</label>
+                  <input id="weight" type="number" value="1" min="1" class="input">
+                  <button id="cancel-edge" class="button">Cancel</button>
+                </div>
+                <div id="graph-controls">
+                  <button id="sample-graph" class="button">Sample Graph</button>
+                  <button id="clear-graph" class="button destructive">Clear</button>
+                </div>
+              </div>
+              
+              <div class="control-group" id="select-controls" style="display: none;">
+                <div class="node-indicator">
+                  <div class="node-color start"></div>
+                  <span id="start-node-label">Start: Not selected</span>
+                </div>
+                <div class="node-indicator">
+                  <div class="node-color end"></div>
+                  <span id="end-node-label">End: Not selected</span>
+                </div>
+              </div>
+              
+              <div class="flex-spacer"></div>
+              
+              <div class="control-group">
+                <div class="switch-container">
+                  <input type="checkbox" id="weights" class="switch" checked>
+                  <label for="weights">Show weights</label>
+                </div>
+                
+                <div class="slider-container">
+                  <label for="speed">Speed:</label>
+                  <input type="range" id="speed" min="1" max="100" value="50" class="slider">
+                </div>
+              </div>
+            </div>
+            
+            <div class="canvas-container">
+              <canvas id="graph-canvas"></canvas>
+            </div>
+            
+            <div class="footer-controls">
+              <div class="legend">
+                <div class="legend-item">
+                  <div class="node-color visited"></div>
+                  <span>Visited</span>
+                </div>
+                <div class="legend-item">
+                  <div class="node-color path"></div>
+                  <span>Path</span>
+                </div>
+              </div>
+              
+              <div class="action-buttons">
+                <button id="reset-algorithm" class="button">Reset</button>
+                <button id="run-algorithm" class="button primary">Run Algorithm</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- New Map Tab -->
+          <div class="tab-content" id="map-tab">
+            <div class="controls-row">
+              <div class="control-group">
+                <button id="map-clear" class="button">Clear Markers</button>
+                <button id="map-locate" class="button">My Location</button>
+              </div>
+              
+              <div class="control-group" id="map-selection-info">
+                <div class="node-indicator">
+                  <div class="node-color start"></div>
+                  <span id="map-start-location">Start: Not selected</span>
+                </div>
+                <div class="node-indicator">
+                  <div class="node-color end"></div>
+                  <span id="map-end-location">End: Not selected</span>
+                </div>
+              </div>
+              
+              <div class="flex-spacer"></div>
+              
+              <div class="control-group">
+                <select id="map-mode" class="input" style="width: auto;">
+                  <option value="driving">Driving</option>
+                  <option value="walking">Walking</option>
+                  <option value="cycling">Cycling</option>
+                </select>
+              </div>
+            </div>
+            
+            <div id="map-container" class="map-container"></div>
+            
+            <div class="footer-controls">
+              <div class="map-stats">
+                <div class="stats-item">
+                  <strong>Distance:</strong>
+                  <span id="map-distance">0 km</span>
+                </div>
+                <div class="stats-item">
+                  <strong>Estimated Time:</strong>
+                  <span id="map-time">0 min</span>
+                </div>
+              </div>
+              
+              <div class="action-buttons">
+                <button id="map-reset" class="button">Reset</button>
+                <button id="map-calculate" class="button primary">Calculate Route</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="tab-content" id="instructions-tab">
+            <div class="instructions">
+              <div>
+                <h3>How to use this tool</h3>
+                <ul>
+                  <li>Switch to <strong>Edit mode</strong> to create and modify the graph</li>
+                  <li>Click on empty space to add a new node</li>
+                  <li>Click on a node and then another node to create an edge</li>
+                  <li>Drag nodes to reposition them</li>
+                  <li>Switch to <strong>Select mode</strong> to choose start and end nodes</li>
+                  <li>Click "Run Algorithm" to visualize Dijkstra's algorithm</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3>Using the Map Feature</h3>
+                <ul>
+                  <li>Go to the <strong>Map</strong> tab to use the real-world map interface</li>
+                  <li>Click on the map to place your <strong>start point</strong> (first click)</li>
+                  <li>Click again to place your <strong>end point</strong> (second click)</li>
+                  <li>Click "Calculate Route" to find the shortest path using Dijkstra's algorithm</li>
+                  <li>Choose different transport modes to see different route calculations</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3>About Dijkstra's Algorithm</h3>
+                <p>
+                  Dijkstra's algorithm is a graph search algorithm that solves the single-source shortest path problem
+                  for a graph with non-negative edge weights, producing a shortest-path tree. This algorithm is often
+                  used in routing and navigation systems.
+                </p>
+              </div>
+              
+              <div class="info-box">
+                <div class="info-icon">i</div>
+                <div>
+                  <h4>How the visualization works</h4>
+                  <p>
+                    Purple nodes show the nodes visited by the algorithm. The green path shows the shortest path
+                    found. Numbers next to nodes show the current shortest distance from the start node.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>
+
